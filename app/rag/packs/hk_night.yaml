@@ -1,0 +1,22 @@
+style_id: hk_night
+name: 港风夜景
+domain: [image.photo_look]
+version: 1
+summary: |
+  潮湿街道、招牌光、暗青阴影。摄影 Look，夜景霓虹但偏胶片街拍，不是未来赛博城。
+positive: |
+  Hong Kong night street, 港风夜景, 夜景霓虹, wet pavement, tungsten shop signs,
+  teal shadows, film grain, crowded alley
+negative: |
+  pastoral daylight, watercolor, magenta-only cyberpunk future, pixel art, oil portrait studio
+use_when: |
+  用户说港风、夜景、霓虹、hk、暗青、赛博夜（若已有照片，优先本 Look 而不是 2D 赛博生成）。
+avoid: |
+  把脸重绘成二次元；不要改成纯水彩或水墨。
+photo_look:
+  lut: hk_night.cube
+  exposure: 0.0
+  warm: 0.0
+  grain: 0.05
+  lut_strength: 1.0
+legal: original_descriptors_only

@@ -1,7 +1,8 @@
 # StyleForge
 
-当前版本（P0）：**上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT 调色 → 并排对比图**。  
-多轮可说「再暗一点」（不丢风格）。LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙，不使用该站素材。  
+当前版本（P0 LUT + P1 RAG）：**上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT 调色 → 并排对比图**。  
+多轮可说「再暗一点」（不丢风格）。风格问答走 Style Pack + Chroma（默认 n-gram 哈希嵌入，不下载 BGE）。  
+LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙，不使用该站素材。  
 进度见 [`任务文档.md`](./任务文档.md)。示意对比条见 `samples/`。
 
 编排用 LangGraph，方便写进简历；修图思路参考 PhotoAgent 的感知→规划→执行闭环。  
@@ -11,7 +12,8 @@
 
 - 三种 Look：`film_portra`、`cinematic_teal_orange`、`hk_night`（`.cube` LUT）
 - 自然语言路由；多轮「再暗一点 / 再暖一点 / 少颗粒」
-- FastAPI：`/v1/health` `/v1/chat` `/v1/chat/{thread_id}` `/v1/jobs` `/v1/assets`
+- FastAPI：`/v1/health` `/v1/chat` `/v1/chat/{thread_id}` `/v1/jobs` `/v1/assets` `/v1/styles` `/v1/rag/query`
+- 10 个 Style Pack YAML + Chroma 检索；「水彩和水墨差在哪」走 RAG citation，不出图
 - Gradio：原图、结果、原图|结果
 - 费用：LUT 调色路径 **0 元**
 
@@ -52,7 +54,14 @@ uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000
 python app_ui.py
 ```
 
-打开 http://127.0.0.1:7860 ，上传照片，输入「做成胶片暖调」。
+打开 http://127.0.0.1:7860 ，上传照片，输入「做成胶片暖调」。无图可问「水彩和水墨差在哪」。
+
+首次风格检索会自动入库；也可手动：
+
+```powershell
+curl.exe -s -X POST http://127.0.0.1:8000/v1/styles/ingest
+curl.exe -s -X POST http://127.0.0.1:8000/v1/rag/query -H "Content-Type: application/json" -d "{\"query\":\"夜景霓虹\",\"k\":3}"
+```
 
 ## 测试
 

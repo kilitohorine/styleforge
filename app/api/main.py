@@ -16,8 +16,22 @@ from app.jobs.store import (
     save_job,
 )
 from app.jobs.threads import load_thread
+from app.rag import load_packs
+from app.rag.retriever import ingest as ingest_styles
+from app.rag.retriever import query as rag_query
 from app.renderers.photo_look import LOOKS, PhotoLookRenderer, encode_jpeg
-from app.schemas.job import ChatIn, ChatOut, ErrorBody, InputAsset, JobCreate, JobOut, JobTrace
+from app.schemas.job import (
+    ChatIn,
+    ChatOut,
+    ErrorBody,
+    InputAsset,
+    JobCreate,
+    JobOut,
+    JobTrace,
+    RagHit,
+    RagQueryIn,
+    RagQueryOut,
+)
 from app.settings import settings
 
 app = FastAPI(title="StyleForge", version="0.1.0")
@@ -45,16 +59,44 @@ def capabilities():
             "asset.3d": {"status": "reserved"},
             "video.clip": {"status": "reserved"},
             "video.long": {"status": "reserved"},
-        }
+        },
+        "rag": {
+            "status": "ready",
+            "store": "chroma",
+            "embedding": "ngram_hash_zh",
+            "note": "BGE-small-zh optional later; default hash embedder needs no download",
+        },
     }
 
 
 @app.get("/v1/styles")
 def list_styles():
+    packs = load_packs()
+    if packs:
+        return [
+            {
+                "style_id": p["style_id"],
+                "name": p.get("name"),
+                "domain": p.get("domain") or [],
+                "ready": p["style_id"] in LOOKS,
+            }
+            for p in packs
+        ]
     return [
-        {"style_id": k, "name": v["name"], "domain": ["image.photo_look"]}
+        {"style_id": k, "name": v["name"], "domain": ["image.photo_look"], "ready": True}
         for k, v in LOOKS.items()
     ]
+
+
+@app.post("/v1/styles/ingest")
+def styles_ingest():
+    return ingest_styles()
+
+
+@app.post("/v1/rag/query", response_model=RagQueryOut)
+def rag_query_http(body: RagQueryIn):
+    hits = rag_query(body.query, k=body.k)
+    return RagQueryOut(hits=[RagHit(**h) for h in hits])
 
 
 @app.post("/v1/assets")

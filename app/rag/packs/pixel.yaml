@@ -1,0 +1,19 @@
+style_id: pixel
+name: 像素
+domain: [image.2d]
+version: 1
+summary: |
+  低分辨率色块、清晰像素网格与有限调色板。偏游戏 UI 与角色，不仿真摄影颗粒。
+positive: |
+  pixel art, limited palette, crisp pixel grid, dithering, 16-bit game sprite,
+  chunky pixels, retro game look
+negative: |
+  film grain, 3D LUT smoothness, watercolor paper, photoreal pores, oil impasto
+use_when: |
+  用户说像素、8bit、16bit、马赛克块、复古游戏。
+avoid: |
+  胶片 LUT、水墨留白、电影青橙调色。
+i2i:
+  strength: 0.7
+  keep: [layout]
+legal: original_descriptors_only

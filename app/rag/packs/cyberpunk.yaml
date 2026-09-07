@@ -1,0 +1,19 @@
+style_id: cyberpunk
+name: 赛博朋克
+domain: [image.2d, video.clip]
+version: 1
+summary: |
+  夜景霓虹、湿沥青反射、品红-青色对抗光。都市雨夜，高对比，密招牌。
+positive: |
+  cyberpunk, night city, neon rain, 夜景霓虹, reflective wet asphalt,
+  magenta-cyan lighting, dense signage, cinematic wide, high contrast
+negative: |
+  daylight pastoral, watercolor paper, ink wash rice paper, low contrast, blurry face
+use_when: |
+  用户说赛博、霓虹、雨夜都市、品红青光、夜景霓虹招牌。与港风夜景对照：赛博更虚构未来，港风更胶片街拍。
+avoid: |
+  水彩纸纹、田园草地、水墨留白。
+i2i:
+  strength: 0.55
+  keep: [face, layout]
+legal: original_descriptors_only

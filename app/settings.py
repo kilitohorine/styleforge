@@ -29,5 +29,11 @@ class Settings(BaseSettings):
     def jobs_db(self) -> Path:
         return self.data_dir / "jobs.db"
 
+    @property
+    def chroma_dir(self) -> Path:
+        d = self.data_dir / "chroma"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
 
 settings = Settings()

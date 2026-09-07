@@ -1,0 +1,19 @@
+style_id: ink_wash
+name: 水墨
+domain: [image.2d]
+version: 1
+summary: |
+  焦墨、飞白、宣纸留白与笔锋。单色或极淡设色，空间靠虚实而不是透视网格。
+positive: |
+  Chinese ink wash, 水墨, rice paper, flying white, dry brush, misty mountains,
+  large negative space, ink diffusion
+negative: |
+  neon rain, watercolor candy palette, pixel dither, oily impasto, teal-orange grade
+use_when: |
+  用户说水墨、墨韵、留白、写意山水。与水彩对比：水墨是墨色与飞白，水彩是透明彩色叠层。
+avoid: |
+  夜景霓虹、赛博朋克招牌、扁平插画色块。
+i2i:
+  strength: 0.5
+  keep: [layout]
+legal: original_descriptors_only

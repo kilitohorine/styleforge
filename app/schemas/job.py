@@ -66,3 +66,21 @@ class ChatOut(BaseModel):
     style_id: str | None = None
     citations: list[str] = Field(default_factory=list)
     params: dict = Field(default_factory=dict)
+
+
+class RagQueryIn(BaseModel):
+    query: str
+    k: int = 3
+
+
+class RagHit(BaseModel):
+    id: str = ""
+    style_id: str | None = None
+    name: str | None = None
+    kind: str | None = None
+    distance: float | None = None
+    snippet: str = ""
+
+
+class RagQueryOut(BaseModel):
+    hits: list[RagHit] = Field(default_factory=list)

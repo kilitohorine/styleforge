@@ -1,0 +1,21 @@
+style_id: cinematic_teal_orange
+name: 电影青橙
+domain: [image.photo_look]
+version: 1
+summary: |
+  阴影偏青、高光偏橙的电影感分离。摄影 Look，.cube LUT，构图与人脸网格保持不变。
+positive: |
+  cinematic teal orange, shadow cyan, warm highlight, filmic contrast, 电影青橙, 阿莱质感
+negative: |
+  pastoral anime, watercolor, ink wash, flat illustration, daylight snapshot look
+use_when: |
+  用户说电影、青橙、cinematic、teal、质感、阿莱。适合剧情感人像与街头。
+avoid: |
+  水彩纸、像素、纯水墨。
+photo_look:
+  lut: cinematic_teal_orange.cube
+  exposure: 0.0
+  warm: 0.0
+  grain: 0.02
+  lut_strength: 1.0
+legal: original_descriptors_only

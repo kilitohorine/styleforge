@@ -1,0 +1,19 @@
+style_id: flat_illustration
+name: 扁平插画
+domain: [image.2d]
+version: 1
+summary: |
+  大色块、少阴影、清晰轮廓。适合图标、海报与说明图，不是摄影 Look。
+positive: |
+  flat illustration, bold color blocks, clean outlines, minimal shading,
+  poster graphic, geometric shapes
+negative: |
+  film portra grain, neon rain, ink splatter, photoreal lighting, heavy impasto
+use_when: |
+  用户说扁平、插画、色块海报、无立体阴影。
+avoid: |
+  港风夜景、赛博湿地面、水彩湿边。
+i2i:
+  strength: 0.45
+  keep: [layout]
+legal: original_descriptors_only

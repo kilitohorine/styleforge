@@ -1,0 +1,21 @@
+style_id: film_portra
+name: 胶片暖调
+domain: [image.photo_look]
+version: 1
+summary: |
+  柯达 Portra 方向的暖肤与柔和高光。摄影 Look，走 .cube 3D LUT，不调用生图。
+positive: |
+  film portra, warm skin, soft highlight roll-off, gentle grain, 胶片暖调, 日系
+negative: |
+  teal-orange blockbuster, neon rain, ink wash, watercolor paper, pixel grid
+use_when: |
+  用户说胶片、暖调、portra、日系、柯达、富士。人像与日光风景优先。
+avoid: |
+  夜景霓虹赛博、水墨写意。不要用 img2img 重绘五官。
+photo_look:
+  lut: film_portra.cube
+  exposure: 0.0
+  warm: 0.0
+  grain: 0.03
+  lut_strength: 1.0
+legal: original_descriptors_only

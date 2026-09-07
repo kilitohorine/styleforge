@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
+from app.rag.retriever import compose_qa, query as rag_query
 from app.renderers.photo_look import LOOKS, merge_params
 from app.settings import settings
 
@@ -177,6 +178,11 @@ def route_node(state: AgentState) -> AgentState:
     parsed = parsed or keyword_route(message, has_image)
     intent, style_id, reply = parsed
     params = merge_params(style_id) if style_id else {}
+    citations = [f"style:{style_id}", "lut:cube"] if style_id else ["pack:photo_looks"]
+    if intent == "qa":
+        hits = rag_query(message, k=3)
+        citations = [f"pack:{h['style_id']}" for h in hits if h.get("style_id")]
+        reply = compose_qa(message, hits)
     return {
         **state,
         "intent": intent,
@@ -184,7 +190,7 @@ def route_node(state: AgentState) -> AgentState:
         "params": params,
         "is_patch": False,
         "reply": reply,
-        "citations": [f"style:{style_id}", "lut:cube"] if style_id else ["pack:photo_looks"],
+        "citations": citations,
     }
 
 

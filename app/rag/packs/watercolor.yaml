@@ -1,0 +1,19 @@
+style_id: watercolor
+name: 水彩
+domain: [image.2d]
+version: 1
+summary: |
+  透明叠色、纸纹与湿边。适合插画感静物与风景，不适合硬边商业海报。
+positive: |
+  watercolor painting, translucent washes, paper grain, wet-on-wet edges,
+  pigment blooms, soft bleeds, visible brush water
+negative: |
+  photoreal skin pores, neon signage, hard vector edges, oil impasto, pixel grid
+use_when: |
+  用户说水彩、水色、纸上晕染、透明叠色。对比水墨时强调彩颜料与纸纹，而不是焦墨飞白。
+avoid: |
+  夜景霓虹、赛博、像素游戏 UI。不要写成任何动画工作室的官方授权风格。
+i2i:
+  strength: 0.6
+  keep: [layout]
+legal: original_descriptors_only

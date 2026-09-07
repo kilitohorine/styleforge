@@ -1,0 +1,19 @@
+style_id: oil_paint
+name: 油画
+domain: [image.2d]
+version: 1
+summary: |
+  厚涂笔触、可见颜料堆叠与古典光。适合肖像与静物，不适合夜景霓虹科幻。
+positive: |
+  oil painting, visible impasto, canvas weave, chiaroscuro, painterly portrait,
+  thick brush strokes, gallery lighting
+negative: |
+  watercolor bleeds, pixel art, flat vector, neon cyberpunk, ink wash voids
+use_when: |
+  用户说油画、厚涂、古典光、画布纹理。
+avoid: |
+  像素游戏、扁平图标、港风霓虹街拍。
+i2i:
+  strength: 0.58
+  keep: [face, layout]
+legal: original_descriptors_only

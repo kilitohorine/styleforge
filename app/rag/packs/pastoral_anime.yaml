@@ -1,0 +1,20 @@
+style_id: pastoral_anime
+name: 田园动画风
+domain: [image.2d]
+version: 1
+summary: |
+  verdant countryside, soft cel shading, warm afternoon light.
+  自有田园动画风配方。禁止写成任何商业动画 IP 的官方风格。
+positive: |
+  pastoral countryside, rolling hills, soft cel shading, warm dusk, quiet village path,
+  painterly background, gentle wind, original anime-inspired landscape
+negative: |
+  cyberpunk neon, ink splatter, pixel art, photoreal LUT grain, licensed studio names
+use_when: |
+  用户说田园、乡村动画、清新二次元风景、草海与晚霞。需要强调这是自有配方 pastoral_anime。
+avoid: |
+  不要在 prompt 或标题里写吉卜力、Ghibli 或具体作品名。
+i2i:
+  strength: 0.55
+  keep: [face, layout]
+legal: original_descriptors_only
