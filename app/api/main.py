@@ -15,6 +15,7 @@ from app.jobs.store import (
     register_asset,
     save_job,
 )
+from app.jobs.threads import load_thread
 from app.renderers.photo_look import LOOKS, PhotoLookRenderer, encode_jpeg
 from app.schemas.job import ChatIn, ChatOut, ErrorBody, InputAsset, JobCreate, JobOut, JobTrace
 from app.settings import settings
@@ -34,7 +35,12 @@ def health():
 def capabilities():
     return {
         "modalities": {
-            "image.photo_look": {"status": "ready", "providers": ["opencv_lut"], "styles": list(LOOKS)},
+            "image.photo_look": {
+                "status": "ready",
+                "providers": ["opencv_cube_lut"],
+                "lut_format": "adobe_iridas_cube",
+                "styles": list(LOOKS),
+            },
             "image.2d": {"status": "not_ready"},
             "asset.3d": {"status": "reserved"},
             "video.clip": {"status": "reserved"},
@@ -100,15 +106,26 @@ def create_job(body: JobCreate):
     if body.style_id not in LOOKS:
         raise HTTPException(status_code=400, detail="unknown style_id")
     renderer = PhotoLookRenderer()
-    bgr, params = renderer.run(source, body.style_id)
-    out_id = dump_output(encode_jpeg(bgr), body.style_id)
+    bgr, compare, params = renderer.run(source, body.style_id)
+    out_id = dump_output(encode_jpeg(bgr), body.style_id, kind=f"look:{body.style_id}")
+    cmp_id = dump_output(encode_jpeg(compare), body.style_id, kind="compare")
     job = JobOut(
         job_id=new_id("j"),
         status="succeeded",
         modality="image.photo_look",
         actual_cost_cny=0.0,
-        outputs=[InputAsset(asset_id=out_id, role="source")],
-        trace=JobTrace(style_id=body.style_id, renderer="photo_look.opencv", params=params),
+        outputs=[
+            InputAsset(asset_id=out_id, role="result"),
+            InputAsset(asset_id=cmp_id, role="compare"),
+        ],
+        trace=JobTrace(
+            style_id=body.style_id,
+            renderer="photo_look.cube_lut",
+            params=params,
+            source_asset_id=source_id,
+            comparison_asset_id=cmp_id,
+            lut=LOOKS[body.style_id]["lut"],
+        ),
     )
     save_job(job)
     return job
@@ -122,15 +139,24 @@ def read_job(job_id: str):
     return job
 
 
+@app.get("/v1/chat/{thread_id}")
+def read_thread(thread_id: str):
+    row = load_thread(thread_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="thread not found")
+    return row
+
+
 @app.post("/v1/chat", response_model=ChatOut)
 def chat(body: ChatIn):
     asset_id = body.asset_ids[0] if body.asset_ids else None
-    state = run_agent(body.message, asset_id)
     thread_id = body.thread_id or new_id("t")
+    state = run_agent(body.message, asset_id, thread_id)
     return ChatOut(
-        thread_id=thread_id,
+        thread_id=state.get("thread_id") or thread_id,
         reply=state.get("reply") or "",
         job_id=state.get("job_id"),
         style_id=state.get("style_id"),
         citations=state.get("citations") or [],
+        params=state.get("params") or {},
     )

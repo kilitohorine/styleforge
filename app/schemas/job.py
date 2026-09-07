@@ -15,7 +15,7 @@ LOOK_STYLE_IDS = (
 
 class InputAsset(BaseModel):
     asset_id: str
-    role: Literal["source", "reference", "mask"] = "source"
+    role: Literal["source", "reference", "mask", "result", "compare"] = "source"
 
 
 class JobCreate(BaseModel):
@@ -37,6 +37,9 @@ class JobTrace(BaseModel):
     renderer: str | None = None
     params: dict = Field(default_factory=dict)
     actions: list[str] = Field(default_factory=list)
+    source_asset_id: str | None = None
+    comparison_asset_id: str | None = None
+    lut: str | None = None
 
 
 class JobOut(BaseModel):
@@ -62,3 +65,4 @@ class ChatOut(BaseModel):
     job_id: str | None = None
     style_id: str | None = None
     citations: list[str] = Field(default_factory=list)
+    params: dict = Field(default_factory=dict)

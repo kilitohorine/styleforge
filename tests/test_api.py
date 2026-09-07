@@ -33,7 +33,8 @@ def test_upload_look_chat():
     assert body["style_id"] == "film_portra"
     job = c.get(f"/v1/jobs/{body['job_id']}")
     assert job.json()["actual_cost_cny"] == 0
-    out_id = job.json()["outputs"][0]["asset_id"]
-    f = c.get(f"/v1/assets/{out_id}/file")
+    outs = job.json()["outputs"]
+    result = next(o for o in outs if o["role"] in ("result", "source"))
+    f = c.get(f"/v1/assets/{result['asset_id']}/file")
     assert f.status_code == 200
     assert len(f.content) > 100

@@ -1,18 +1,19 @@
 # StyleForge
 
-一天最小闭环：**上传照片 → LangGraph（route → execute）→ OpenCV 摄影 Look → 下载结果**。  
-进度与下一步见 [`任务文档.md`](./任务文档.md)。
+当前版本（P0）：**上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT 调色 → 并排对比图**。  
+多轮可说「再暗一点」（不丢风格）。LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙，不使用该站素材。  
+进度见 [`任务文档.md`](./任务文档.md)。示意对比条见 `samples/`。
 
 编排用 LangGraph，方便写进简历；修图思路参考 PhotoAgent 的感知→规划→执行闭环。  
 **本仓库不是 PhotoAgent 官方实现**（官方代码尚未发布）。
 
 ## 一天闭环能做什么
 
-- 三种 Look：`film_portra`（胶片暖调）、`cinematic_teal_orange`（电影青橙）、`hk_night`（港风夜景）
-- 自然语言路由（无 API Key 时用关键词；有 DeepSeek Key 时用 LLM）
-- FastAPI：`/v1/health` `/v1/chat` `/v1/jobs` `/v1/assets`
-- Gradio 页面：上传 + 出图
-- 费用：调色路径 **0 元**（不调用生图）
+- 三种 Look：`film_portra`、`cinematic_teal_orange`、`hk_night`（`.cube` LUT）
+- 自然语言路由；多轮「再暗一点 / 再暖一点 / 少颗粒」
+- FastAPI：`/v1/health` `/v1/chat` `/v1/chat/{thread_id}` `/v1/jobs` `/v1/assets`
+- Gradio：原图、结果、原图|结果
+- 费用：LUT 调色路径 **0 元**
 
 ## 明确不做（避免简历夸大）
 

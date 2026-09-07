@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.schemas.job import ErrorBody, InputAsset, JobOut, JobTrace
+from app.schemas.job import JobOut
 from app.settings import settings
 
 
@@ -107,7 +107,7 @@ def get_job(job_id: str) -> JobOut | None:
     return JobOut.model_validate_json(row["payload"])
 
 
-def dump_output(bgr_bytes: bytes, style_id: str) -> str:
+def dump_output(bgr_bytes: bytes, style_id: str, kind: str | None = None) -> str:
     init_db()
     asset_id = new_id("a")
     path = settings.assets_dir / f"{asset_id}.jpg"
@@ -115,6 +115,6 @@ def dump_output(bgr_bytes: bytes, style_id: str) -> str:
     with connect() as conn:
         conn.execute(
             "INSERT INTO assets(asset_id, path, kind, created_at) VALUES (?,?,?,?)",
-            (asset_id, str(path), f"look:{style_id}", _now()),
+            (asset_id, str(path), kind or f"look:{style_id}", _now()),
         )
     return asset_id
