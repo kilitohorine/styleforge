@@ -1,9 +1,8 @@
 # StyleForge
 
-当前版本（P0 LUT + P1 RAG）：**上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT 调色 → 并排对比图**。  
-多轮可说「再暗一点」（不丢风格）。风格问答走 Style Pack + Chroma（默认 n-gram 哈希嵌入，不下载 BGE）。  
-LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙，不使用该站素材。  
-进度见 [`任务文档.md`](./任务文档.md)。示意对比条见 `samples/`。
+当前版本（P1）：**Look LUT + Style Pack RAG + image.2d 硅基流动（预算熔断）**。  
+上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT；无图问答走 RAG；说「改成水墨画」才走 2D 生图。  
+LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙。进度见 [`任务文档.md`](./任务文档.md)。
 
 编排用 LangGraph，方便写进简历；修图思路参考 PhotoAgent 的感知→规划→执行闭环。  
 **本仓库不是 PhotoAgent 官方实现**（官方代码尚未发布）。
@@ -12,15 +11,16 @@ LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为�
 
 - 三种 Look：`film_portra`、`cinematic_teal_orange`、`hk_night`（`.cube` LUT）
 - 自然语言路由；多轮「再暗一点 / 再暖一点 / 少颗粒」
-- FastAPI：`/v1/health` `/v1/chat` `/v1/chat/{thread_id}` `/v1/jobs` `/v1/assets` `/v1/styles` `/v1/rag/query`
+- FastAPI：`/v1/health` `/v1/chat` `/v1/jobs` `/v1/assets` `/v1/styles` `/v1/rag/query` `/v1/budget`
 - 10 个 Style Pack YAML + Chroma 检索；「水彩和水墨差在哪」走 RAG citation，不出图
+- `image.2d`：硅基流动（Kolors）；无 Key 失败关闭；超 `DAILY_BUDGET_CNY` / `PROJECT_BUDGET_CNY` 不发请求
 - Gradio：原图、结果、原图|结果
-- 费用：LUT 调色路径 **0 元**
+- 费用：LUT 调色路径 **0 元**；2D 按次计费并记账
 
 ## 明确不做（避免简历夸大）
 
 - 未复现 PhotoAgent 的完整 MCTS / UGC Reward（GRPO）
-- 未做水彩/吉卜力等生成式风格（预留 `image.2d`）
+- 未做 7 种艺术风格作品集出图（接 Key 后可单张试 `改成水墨画`，受日预算熔断）
 - 3D / 长视频返回能力保留为 reserved
 
 ## 环境（Windows）
@@ -76,7 +76,7 @@ START → route → (有图且是 Look) execute → END
               ↘ (问答 / 无图) END
 ```
 
-`execute` 只调用 `PhotoLookRenderer`（OpenCV），不直连任何生图厂商。
+`execute` 对摄影 Look 只调用 `PhotoLookRenderer`（OpenCV）；对 `image.2d` 只调用 `Image2DRenderer`（厂商 URL 仅出现在 `app/providers/`）。
 
 ## 简历建议写法
 

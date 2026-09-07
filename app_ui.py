@@ -57,7 +57,8 @@ def launch():
             "## StyleForge · LUT 摄影 Look\n"
             "上传照片，说「胶片暖调 / 电影青橙 / 港风夜景」，再试「再暗一点」。"
             "调色使用 **.cube 3D LUT**（格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere Lumetri），"
-            "LangGraph：`route → execute`。无图可问「水彩和水墨差在哪」（RAG citation，不出图）。0 元。"
+            "LangGraph：`route → execute`。无图可问「水彩和水墨差在哪」。"
+            "说「改成水墨画」走 image.2d（需硅基流动 Key，超日预算会熔断）。Look 路径 0 元。"
         )
         thread = gr.State(value=None)
         with gr.Row():

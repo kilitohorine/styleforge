@@ -1,54 +1,38 @@
-"""LangGraph: route → execute. LUT looks + multi-turn param patch."""
+"""LangGraph: route → execute. LUT looks, image.2d, multi-turn param patch."""
 
 from __future__ import annotations
 
 from langgraph.graph import END, START, StateGraph
 
 from app.graphs.route import AgentState, after_route, route_node
-from app.jobs.store import asset_path, dump_output, new_id, save_job
+from app.jobs.run import run_image_2d, run_photo_look
+from app.jobs.store import new_id
 from app.jobs.threads import load_thread, save_thread
-from app.renderers.photo_look import LOOKS, PhotoLookRenderer, encode_jpeg
-from app.schemas.job import InputAsset, JobOut, JobTrace
+from app.renderers.image_2d import ART_STYLES
 
 
 def execute_node(state: AgentState) -> AgentState:
     style_id = state["style_id"]
-    asset_id = state["asset_id"]
-    assert style_id and asset_id
-    source = asset_path(asset_id)
-    renderer = PhotoLookRenderer()
-    bgr, compare, params = renderer.run(source, style_id, state.get("params"))
-    out_id = dump_output(encode_jpeg(bgr), style_id, kind=f"look:{style_id}")
-    cmp_id = dump_output(encode_jpeg(compare), style_id, kind="compare")
-    actions = ["perceive_intent", "plan_greedy_look", "execute_cube_lut"]
-    if state.get("is_patch"):
-        actions.insert(1, "patch_params")
-    job = JobOut(
-        job_id=new_id("j"),
-        status="succeeded",
-        modality="image.photo_look",
-        estimated_cost_cny=0.0,
-        actual_cost_cny=0.0,
-        outputs=[
-            InputAsset(asset_id=out_id, role="result"),
-            InputAsset(asset_id=cmp_id, role="compare"),
-        ],
-        trace=JobTrace(
-            style_id=style_id,
-            renderer="photo_look.cube_lut",
-            params=params,
-            actions=actions,
-            source_asset_id=asset_id,
-            comparison_asset_id=cmp_id,
-            lut=LOOKS[style_id]["lut"],
-        ),
-    )
-    save_job(job)
+    asset_id = state.get("asset_id")
+    assert style_id
+    if state.get("intent") == "image2d":
+        job = run_image_2d(style_id, state.get("message") or "", asset_id)
+        name = ART_STYLES.get(style_id, {}).get("name") or style_id
+        if job.status == "succeeded":
+            extra = f" 任务 {job.job_id} 已完成，约 {job.actual_cost_cny} 元（{job.trace.renderer}）。"
+        else:
+            err = job.error.message if job.error else "failed"
+            extra = f" 2D 未出图：{err}"
+        reply = (state.get("reply") or "") + extra
+        return {**state, "job_id": job.job_id, "params": job.trace.params, "reply": reply}
+
+    assert asset_id
+    job = run_photo_look(style_id, asset_id, state.get("params"))
     reply = state.get("reply") or ""
     return {
         **state,
         "job_id": job.job_id,
-        "params": params,
+        "params": job.trace.params,
         "reply": reply + f" 任务 {job.job_id} 已完成，费用 0 元。对比图已写入 trace。",
     }
 

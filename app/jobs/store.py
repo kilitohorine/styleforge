@@ -54,6 +54,18 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spend (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id TEXT,
+                amount REAL NOT NULL,
+                modality TEXT NOT NULL,
+                day TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
 
 
 def register_asset(path: Path, kind: str = "upload", asset_id: str | None = None) -> str:

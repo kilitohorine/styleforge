@@ -6,28 +6,21 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app.graphs.agent import run_agent
-from app.jobs.store import (
-    asset_path,
-    dump_output,
-    get_job,
-    init_db,
-    new_id,
-    register_asset,
-    save_job,
-)
+from app.jobs.budget import snapshot as budget_snapshot
+from app.jobs.run import run_image_2d, run_photo_look
+from app.jobs.store import asset_path, get_job, init_db, new_id, register_asset
 from app.jobs.threads import load_thread
 from app.rag import load_packs
 from app.rag.retriever import ingest as ingest_styles
 from app.rag.retriever import query as rag_query
-from app.renderers.photo_look import LOOKS, PhotoLookRenderer, encode_jpeg
+from app.renderers.image_2d import ART_STYLES
+from app.renderers.photo_look import LOOKS
 from app.schemas.job import (
     ChatIn,
     ChatOut,
     ErrorBody,
-    InputAsset,
     JobCreate,
     JobOut,
-    JobTrace,
     RagHit,
     RagQueryIn,
     RagQueryOut,
@@ -38,6 +31,12 @@ app = FastAPI(title="StyleForge", version="0.1.0")
 init_db()
 
 RESERVED = {"asset.3d", "video.clip", "video.long"}
+
+
+def _image_2d_ready() -> bool:
+    if settings.image_2d_backend == "mock":
+        return True
+    return bool((settings.siliconflow_api_key or "").strip())
 
 
 @app.get("/v1/health")
@@ -55,7 +54,12 @@ def capabilities():
                 "lut_format": "adobe_iridas_cube",
                 "styles": list(LOOKS),
             },
-            "image.2d": {"status": "not_ready"},
+            "image.2d": {
+                "status": "ready" if _image_2d_ready() else "not_ready",
+                "providers": ["siliconflow"],
+                "backend": settings.image_2d_backend,
+                "styles": list(ART_STYLES),
+            },
             "asset.3d": {"status": "reserved"},
             "video.clip": {"status": "reserved"},
             "video.long": {"status": "reserved"},
@@ -66,6 +70,7 @@ def capabilities():
             "embedding": "ngram_hash_zh",
             "note": "BGE-small-zh optional later; default hash embedder needs no download",
         },
+        "budget": budget_snapshot(),
     }
 
 
@@ -78,7 +83,7 @@ def list_styles():
                 "style_id": p["style_id"],
                 "name": p.get("name"),
                 "domain": p.get("domain") or [],
-                "ready": p["style_id"] in LOOKS,
+                "ready": p["style_id"] in LOOKS or (p["style_id"] in ART_STYLES and _image_2d_ready()),
             }
             for p in packs
         ]
@@ -86,6 +91,19 @@ def list_styles():
         {"style_id": k, "name": v["name"], "domain": ["image.photo_look"], "ready": True}
         for k, v in LOOKS.items()
     ]
+
+
+@app.get("/v1/styles/{style_id}")
+def get_style(style_id: str):
+    for row in list_styles():
+        if row["style_id"] == style_id:
+            return row
+    raise HTTPException(status_code=404, detail="style not found")
+
+
+@app.get("/v1/budget")
+def read_budget():
+    return budget_snapshot()
 
 
 @app.post("/v1/styles/ingest")
@@ -136,41 +154,27 @@ def create_job(body: JobCreate):
             status_code=501,
             detail={"error": ErrorBody(code="MODALITY_RESERVED", message=f"{body.modality} reserved").model_dump()},
         )
-    if body.modality != "image.photo_look":
-        raise HTTPException(status_code=501, detail="only image.photo_look in day-1 loop")
-    if not body.input_assets:
-        raise HTTPException(status_code=400, detail="input_assets required")
-    source_id = body.input_assets[0].asset_id
-    try:
-        source = asset_path(source_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="source asset not found")
-    if body.style_id not in LOOKS:
-        raise HTTPException(status_code=400, detail="unknown style_id")
-    renderer = PhotoLookRenderer()
-    bgr, compare, params = renderer.run(source, body.style_id)
-    out_id = dump_output(encode_jpeg(bgr), body.style_id, kind=f"look:{body.style_id}")
-    cmp_id = dump_output(encode_jpeg(compare), body.style_id, kind="compare")
-    job = JobOut(
-        job_id=new_id("j"),
-        status="succeeded",
-        modality="image.photo_look",
-        actual_cost_cny=0.0,
-        outputs=[
-            InputAsset(asset_id=out_id, role="result"),
-            InputAsset(asset_id=cmp_id, role="compare"),
-        ],
-        trace=JobTrace(
-            style_id=body.style_id,
-            renderer="photo_look.cube_lut",
-            params=params,
-            source_asset_id=source_id,
-            comparison_asset_id=cmp_id,
-            lut=LOOKS[body.style_id]["lut"],
-        ),
-    )
-    save_job(job)
-    return job
+    source_id = body.input_assets[0].asset_id if body.input_assets else None
+    if body.modality == "image.photo_look":
+        if not source_id:
+            raise HTTPException(status_code=400, detail="input_assets required")
+        try:
+            asset_path(source_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="source asset not found")
+        if body.style_id not in LOOKS:
+            raise HTTPException(status_code=400, detail="unknown style_id")
+        return run_photo_look(body.style_id, source_id)
+    if body.modality == "image.2d":
+        if body.style_id not in ART_STYLES:
+            raise HTTPException(status_code=400, detail="unknown image.2d style_id")
+        if source_id:
+            try:
+                asset_path(source_id)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="source asset not found")
+        return run_image_2d(body.style_id, body.prompt, source_id, body.budget_cny_max)
+    raise HTTPException(status_code=501, detail="unsupported modality")
 
 
 @app.get("/v1/jobs/{job_id}", response_model=JobOut)

@@ -135,8 +135,12 @@ def compose_qa(message: str, hits: list[dict[str, Any]]) -> str:
     text = message or ""
     if "水彩" in text and "水墨" in text:
         lines.append(
-            "对比：水彩是透明彩色叠层与纸纹湿边；水墨是焦墨、飞白与留白。二者都属于 image.2d 预留，当前不能出图。"
+            "对比：水彩是透明彩色叠层与纸纹湿边；水墨是焦墨、飞白与留白。"
+            "问答不出图；要出图请说「改成水墨画」，并配置 SILICONFLOW_API_KEY（受日预算熔断）。"
         )
     else:
-        lines.append("当前可渲染：胶片暖调 / 电影青橙 / 港风夜景（.cube LUT）。艺术风格仅可问答检索。")
+        lines.append(
+            "当前可渲染：胶片暖调 / 电影青橙 / 港风夜景（.cube LUT，0 元）。"
+            "艺术风格问答只引用配方；要生图请说「改成…」并配置硅基流动 Key。"
+        )
     return "\n".join(lines)

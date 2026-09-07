@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 from app.rag.retriever import compose_qa, query as rag_query
+from app.renderers.image_2d import ART_STYLES, match_art_style, wants_generate
 from app.renderers.photo_look import LOOKS, merge_params
 from app.settings import settings
 
@@ -30,7 +31,7 @@ class AgentState(TypedDict, total=False):
     message: str
     asset_id: str | None
     thread_id: str | None
-    intent: Literal["look", "qa", "unsupported"]
+    intent: Literal["look", "qa", "unsupported", "image2d"]
     style_id: str | None
     reply: str
     job_id: str | None
@@ -101,11 +102,19 @@ def keyword_route(message: str, has_image: bool) -> tuple[str, str | None, str]:
     if has_image and text in ("", "修好", "美化", "增强", "好看一点"):
         return "look", "film_portra", "未指定风格，默认胶片暖调（Portra LUT）。"
 
-    if any(k in text for k in ("水彩", "水墨", "赛博", "吉卜力", "像素", "油画")):
+    art_id = match_art_style(message or "")
+    if art_id and wants_generate(message or ""):
+        name = ART_STYLES[art_id]["name"]
+        return (
+            "image2d",
+            art_id,
+            f"将使用 image.2d 风格 {name}（{art_id}）。未配 Key 或超预算则不会出网。",
+        )
+    if art_id or any(k in text for k in ("水彩", "水墨", "赛博", "吉卜力", "像素", "油画")):
         return (
             "qa",
             None,
-            "艺术风格化（文生图/图生图）在二期。当前支持：胶片暖调、电影青橙、港风夜景（Cube LUT）。请上传照片并说明 Look。",
+            "艺术风格化走 RAG 问答；要出图请明确说「改成水墨画 / 生成水彩」并配置 SILICONFLOW_API_KEY。",
         )
 
     if has_image:
@@ -126,7 +135,7 @@ def _llm_route(message: str, has_image: bool) -> tuple[str, str | None, str] | N
         from pydantic import BaseModel, Field
 
         class Route(BaseModel):
-            intent: Literal["look", "qa", "unsupported"]
+            intent: Literal["look", "qa", "unsupported", "image2d"]
             style_id: str | None = Field(default=None)
             reply: str
 
@@ -138,12 +147,22 @@ def _llm_route(message: str, has_image: bool) -> tuple[str, str | None, str] | N
         )
         structured = llm.with_structured_output(Route)
         prompt = (
-            "你是修图 Agent 路由器。只允许 look 风格: film_portra, cinematic_teal_orange, hk_night。\n"
-            "用户有图则优先 look。3D/视频为 unsupported。改曝光/颗粒属于 look 补丁，不要改成 qa。\n"
+            "你是修图 Agent 路由器。look 风格: film_portra, cinematic_teal_orange, hk_night。\n"
+            "image2d 风格: watercolor, pastoral_anime, cyberpunk, ink_wash, oil_paint, pixel, flat_illustration。\n"
+            "用户说「改成水墨/生成水彩」才用 image2d；问区别用 qa。有图且说胶片/调色用 look。3D/视频为 unsupported。\n"
             f"有图={has_image}\n用户: {message}"
         )
         out = structured.invoke(prompt)
-        style = out.style_id if out.style_id in LOOK_IDS else ("film_portra" if out.intent == "look" else None)
+        if out.style_id in LOOK_IDS:
+            style = out.style_id
+        elif out.intent == "look":
+            style = "film_portra"
+        elif out.intent == "image2d" and out.style_id in ART_STYLES:
+            style = out.style_id
+        elif out.intent == "image2d":
+            style = match_art_style(message)
+        else:
+            style = None
         return out.intent, style, out.reply
     except Exception:
         return None
@@ -161,7 +180,7 @@ def route_node(state: AgentState) -> AgentState:
         for kw in meta["keywords"]
     )
 
-    if delta is not None and prev_style and not style_hit:
+    if delta is not None and prev_style and prev_style in LOOKS and not style_hit:
         params = apply_param_delta(merge_params(prev_style, prev_params), delta)
         name = LOOKS[prev_style]["name"]
         return {
@@ -177,12 +196,14 @@ def route_node(state: AgentState) -> AgentState:
     parsed = None if delta is not None else _llm_route(message, has_image)
     parsed = parsed or keyword_route(message, has_image)
     intent, style_id, reply = parsed
-    params = merge_params(style_id) if style_id else {}
+    params = merge_params(style_id) if style_id and style_id in LOOKS else {}
     citations = [f"style:{style_id}", "lut:cube"] if style_id else ["pack:photo_looks"]
     if intent == "qa":
         hits = rag_query(message, k=3)
         citations = [f"pack:{h['style_id']}" for h in hits if h.get("style_id")]
         reply = compose_qa(message, hits)
+    if intent == "image2d" and style_id:
+        citations = [f"pack:{style_id}", "provider:siliconflow"]
     return {
         **state,
         "intent": intent,
@@ -196,5 +217,7 @@ def route_node(state: AgentState) -> AgentState:
 
 def after_route(state: AgentState) -> str:
     if state.get("intent") == "look" and state.get("asset_id") and state.get("style_id"):
+        return "execute"
+    if state.get("intent") == "image2d" and state.get("style_id"):
         return "execute"
     return "end"

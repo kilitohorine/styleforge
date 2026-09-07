@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com/v1"
     deepseek_model: str = "deepseek-chat"
+    project_budget_cny: float = 500.0
+    daily_budget_cny: float = 20.0
+    siliconflow_api_key: str = ""
+    siliconflow_base_url: str = "https://api.siliconflow.cn/v1"
+    siliconflow_image_model: str = "Kwai-Kolors/Kolors"
+    image_2d_backend: str = "siliconflow"
 
     @property
     def data_dir(self) -> Path:
