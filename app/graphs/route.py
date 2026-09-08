@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 from app.rag.retriever import compose_qa, query as rag_query
-from app.renderers.image_2d import ART_STYLES, match_art_style, wants_generate
+from app.renderers.image_2d import ART_STYLES, ASK_HINTS, match_art_style, wants_generate
 from app.renderers.photo_look import LOOKS, merge_params
 from app.settings import settings
 
@@ -91,8 +91,18 @@ def np_clip(v: float, lo: float, hi: float) -> float:
 
 def keyword_route(message: str, has_image: bool) -> tuple[str, str | None, str]:
     text = (message or "").strip().lower()
-    if any(k in text for k in ("3d", "视频", "video", "mesh")):
+    if any(k in text for k in ("3d", "视频", "video", "mesh", "剪辑", "十分钟片子", "十分钟视频")):
         return "unsupported", None, "3D / 长视频是预留能力（HTTP 501），当前闭环只做摄影 Look / LUT。"
+    if any(k in text for k in ("同人训练", "lora", "官方授权训练", "官方吉卜力授权")):
+        return (
+            "unsupported",
+            None,
+            "不提供官方 IP 同人训练或 LoRA。田园动画风请用 pastoral_anime 描述，产品不宣称官方授权。",
+        )
+    if any(k in (message or "") for k in ASK_HINTS) or any(
+        k in text for k in ("适合什么", "哪款风格", "哪种 look", "哪种look")
+    ):
+        return "qa", None, "风格对比走 RAG，不创建渲染任务。"
 
     ranked: list[tuple[int, str]] = []
     for style_id, meta in LOOKS.items():

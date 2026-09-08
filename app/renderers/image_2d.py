@@ -7,7 +7,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.providers.siliconflow import ProviderError, generate
+from app.providers import generate
+from app.providers.errors import ProviderError
 from app.rag import load_packs
 from app.renderers.photo_look import encode_jpeg
 from app.settings import settings
@@ -88,11 +89,18 @@ class Image2DRenderer:
         full_prompt, negative = build_prompt(style_id, prompt)
         params = {
             "backend": settings.image_2d_backend,
-            "model": settings.siliconflow_image_model,
+            "model": (
+                "mock"
+                if settings.image_2d_backend == "mock"
+                else (
+                    settings.dashscope_image_model
+                    if settings.image_2d_backend in {"dashscope", "dashscope_wanxiang", "wanxiang"}
+                    else settings.siliconflow_image_model
+                )
+            ),
             "prompt": full_prompt[:500],
         }
         if settings.image_2d_backend == "mock":
-            params["model"] = "mock"
             return _mock_jpeg(style_id), params
         image_jpeg = None
         if source is not None:

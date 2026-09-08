@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     siliconflow_base_url: str = "https://api.siliconflow.cn/v1"
     siliconflow_image_model: str = "Kwai-Kolors/Kolors"
     image_2d_backend: str = "siliconflow"
+    dashscope_api_key: str = ""
+    dashscope_base_url: str = "https://dashscope.aliyuncs.com/api/v1"
+    dashscope_image_path: str = "/services/aigc/text2image/image-synthesis"
+    dashscope_image_model: str = "wanx2.1-t2i-turbo"
     enable_critique: bool = True
     max_critique_step: int = 2
     enable_mcts: bool = False

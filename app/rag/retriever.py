@@ -140,7 +140,7 @@ def compose_qa(message: str, hits: list[dict[str, Any]]) -> str:
         )
     else:
         lines.append(
-            "当前可渲染：胶片暖调 / 电影青橙 / 港风夜景（.cube LUT，0 元）。"
-            "艺术风格问答只引用配方；要生图请说「改成…」并配置硅基流动 Key。"
+            "当前可渲染摄影 Look：胶片暖调 / 电影青橙 / 港风夜景 / 黑白 / 复古 / 黄金时刻 / 冷调 / 哑光（.cube LUT，0 元）。"
+            "艺术风格问答只引用配方；要生图请说「改成…」并配置生图 Key。"
         )
     return "\n".join(lines)

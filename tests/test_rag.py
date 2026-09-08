@@ -7,8 +7,8 @@ from app.rag import load_packs
 def test_ten_style_packs():
     packs = load_packs()
     ids = {p["style_id"] for p in packs}
-    assert len(packs) >= 8
-    assert {"film_portra", "hk_night", "cyberpunk", "watercolor", "ink_wash"} <= ids
+    assert len(packs) >= 15
+    assert {"film_portra", "hk_night", "golden_hour", "cyberpunk", "watercolor", "ink_wash"} <= ids
 
 
 def test_styles_endpoint_lists_packs():
@@ -19,6 +19,18 @@ def test_styles_endpoint_lists_packs():
     assert len(ids) >= 8
     assert "watercolor" in ids
     assert "film_portra" in ids
+    assert "matte_film" in ids
+
+
+def test_rag_placeholder_docs_hit():
+    c = TestClient(app)
+    c.post("/v1/styles/ingest")
+    shot = c.post("/v1/rag/query", json={"query": "分镜语法慢推", "k": 3})
+    mat = c.post("/v1/rag/query", json={"query": "PBR 金属度材质", "k": 3})
+    shot_ids = {h["style_id"] for h in shot.json()["hits"]}
+    mat_ids = {h["style_id"] for h in mat.json()["hits"]}
+    assert "shot_grammar" in shot_ids
+    assert "material_3d" in mat_ids
 
 
 def test_rag_query_neon_hits_night_styles():

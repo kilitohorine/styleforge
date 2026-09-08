@@ -9,6 +9,18 @@ from pathlib import Path
 from app.schemas.job import JobOut
 from app.settings import settings
 
+ALLOWED_TRANSITIONS: dict[str, set[str]] = {
+    "queued": {"running", "failed", "cancelled"},
+    "running": {"succeeded", "failed", "cancelled"},
+    "succeeded": set(),
+    "failed": set(),
+    "cancelled": set(),
+}
+
+
+class IllegalJobTransition(ValueError):
+    """queued→running→succeeded/failed; terminal states cannot move backward."""
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -23,6 +35,7 @@ def connect():
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(settings.jobs_db)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     try:
         yield conn
         conn.commit()
@@ -91,6 +104,11 @@ def asset_path(asset_id: str) -> Path:
 def save_job(job: JobOut) -> None:
     init_db()
     with connect() as conn:
+        row = conn.execute("SELECT status FROM jobs WHERE job_id=?", (job.job_id,)).fetchone()
+        if row:
+            old = row["status"]
+            if job.status != old and job.status not in ALLOWED_TRANSITIONS.get(old, set()):
+                raise IllegalJobTransition(f"{job.job_id}: {old} -> {job.status}")
         conn.execute(
             """
             INSERT INTO jobs(job_id, status, modality, style_id, payload, created_at)

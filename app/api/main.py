@@ -10,6 +10,7 @@ from app.jobs.budget import snapshot as budget_snapshot
 from app.jobs.run import run_image_2d, run_photo_look
 from app.jobs.store import asset_path, get_job, init_db, new_id, register_asset
 from app.jobs.threads import load_thread
+from app.providers import DASH_BACKENDS
 from app.rag import load_packs
 from app.rag.retriever import ingest as ingest_styles
 from app.rag.retriever import query as rag_query
@@ -34,8 +35,11 @@ RESERVED = {"asset.3d", "video.clip", "video.long"}
 
 
 def _image_2d_ready() -> bool:
-    if settings.image_2d_backend == "mock":
+    backend = settings.image_2d_backend
+    if backend == "mock":
         return True
+    if backend in DASH_BACKENDS:
+        return bool((settings.dashscope_api_key or "").strip())
     return bool((settings.siliconflow_api_key or "").strip())
 
 
@@ -56,7 +60,7 @@ def capabilities():
             },
             "image.2d": {
                 "status": "ready" if _image_2d_ready() else "not_ready",
-                "providers": ["siliconflow"],
+                "providers": ["siliconflow", "dashscope_wanxiang"],
                 "backend": settings.image_2d_backend,
                 "styles": list(ART_STYLES),
             },

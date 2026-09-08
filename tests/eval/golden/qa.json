@@ -1,0 +1,12 @@
+[
+  {"id": "QA01", "query": "水彩和水墨差在哪", "expect_any": ["watercolor", "ink_wash"]},
+  {"id": "QA02", "query": "夜景霓虹", "expect_any": ["cyberpunk", "hk_night"]},
+  {"id": "QA03", "query": "胶片暖调 Portra", "expect_any": ["film_portra"]},
+  {"id": "QA04", "query": "电影青橙 teal orange", "expect_any": ["cinematic_teal_orange"]},
+  {"id": "QA05", "query": "田园动画风 pastoral", "expect_any": ["pastoral_anime"]},
+  {"id": "QA06", "query": "油画厚涂", "expect_any": ["oil_paint"]},
+  {"id": "QA07", "query": "像素 8bit", "expect_any": ["pixel"]},
+  {"id": "QA08", "query": "黄金时刻日落", "expect_any": ["golden_hour"]},
+  {"id": "QA09", "query": "分镜语法慢推锁头", "expect_any": ["shot_grammar"]},
+  {"id": "QA10", "query": "PBR 金属度粗糙度材质", "expect_any": ["material_3d"]}
+]
