@@ -35,10 +35,16 @@ def failed_job(
     return job
 
 
-def run_photo_look(style_id: str, source_id: str, overrides: dict | None = None) -> JobOut:
+def run_photo_look(
+    style_id: str,
+    source_id: str,
+    overrides: dict | None = None,
+    extra_trace: dict | None = None,
+) -> JobOut:
     source = asset_path(source_id)
     renderer = PhotoLookRenderer()
     bgr, compare, params = renderer.run(source, style_id, overrides)
+    extra = extra_trace or {}
     out_id = dump_output(encode_jpeg(bgr), style_id, kind=f"look:{style_id}")
     cmp_id = dump_output(encode_jpeg(compare), style_id, kind="compare")
     job = JobOut(
@@ -55,10 +61,12 @@ def run_photo_look(style_id: str, source_id: str, overrides: dict | None = None)
             style_id=style_id,
             renderer="photo_look.cube_lut",
             params=params,
-            actions=["perceive_intent", "plan_greedy_look", "execute_cube_lut"],
+            actions=list(extra.get("actions") or ["perceive_intent", "plan_greedy_look", "execute_cube_lut"]),
             source_asset_id=source_id,
             comparison_asset_id=cmp_id,
             lut=LOOKS[style_id]["lut"],
+            scene=extra.get("scene"),
+            retry_count=int(extra.get("retry_count") or 0),
         ),
     )
     save_job(job)
@@ -107,18 +115,31 @@ def run_image_2d(
                 source_asset_id=source_id,
             )
     renderer = Image2DRenderer()
-    try:
-        jpeg, params = renderer.run(style_id, prompt, source)
-    except ProviderError as exc:
+    last_exc: ProviderError | None = None
+    jpeg = b""
+    params: dict = {}
+    retries = 0
+    for attempt in range(2):
+        try:
+            jpeg, params = renderer.run(style_id, prompt, source)
+            retries = attempt
+            last_exc = None
+            break
+        except ProviderError as exc:
+            last_exc = exc
+            if not exc.retryable or attempt == 1:
+                break
+    if last_exc is not None:
         return failed_job(
             modality="image.2d",
             style_id=style_id,
-            code=exc.code,
-            message=str(exc),
+            code=last_exc.code,
+            message=str(last_exc),
             estimated=estimated,
-            retryable=exc.retryable,
+            retryable=last_exc.retryable,
             source_asset_id=source_id,
         )
+    params["retry_count"] = retries
     out_id = dump_output(jpeg, style_id, kind=f"2d:{style_id}")
     job = JobOut(
         job_id=new_id("j"),
@@ -131,8 +152,9 @@ def run_image_2d(
             style_id=style_id,
             renderer=f"image_2d.{backend}",
             params=params,
-            actions=["perceive_intent", "plan_greedy_2d", "execute_image_2d"],
+            actions=["plan_greedy_2d", "execute_image_2d"],
             source_asset_id=source_id,
+            retry_count=retries,
         ),
     )
     save_job(job)

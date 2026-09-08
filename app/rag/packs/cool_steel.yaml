@@ -1,0 +1,19 @@
+style_id: cool_steel
+name: 冷调青灰
+domain: [image.photo_look]
+version: 1
+summary: |
+  降红、抬青、略降饱和。适合阴天风光与都市混凝土。摄影 Look。
+positive: |
+  cool steel, cyan-gray, overcast, 冷调青灰, desaturated blue
+negative: |
+  golden hour, portra warmth, watercolor paper, pixel grid
+use_when: |
+  用户说冷调、青灰、阴天、steel、冷色。
+avoid: |
+  暖肤人像优先 film_portra；夜景霓虹优先 hk_night。
+photo_look:
+  lut: cool_steel.cube
+  grain: 0.02
+  lut_strength: 1.0
+legal: original_descriptors_only

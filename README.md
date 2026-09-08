@@ -1,31 +1,29 @@
 # StyleForge
 
-当前版本（P1）：**Look LUT + Style Pack RAG + image.2d 硅基流动（预算熔断）**。  
-上传照片 → LangGraph（route → execute）→ `.cube` 3D LUT；无图问答走 RAG；说「改成水墨画」才走 2D 生图。  
-LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere，文件为仓库自烘焙。进度见 [`任务文档.md`](./任务文档.md)。
+当前版本（一期）：**8 种摄影 Look（自烘焙 `.cube`）+ Style Pack RAG + image.2d 预算熔断 + Docker**。  
+LangGraph：`route → perceive → execute → critique`（Look，0 元）；问答走 RAG；「改成水墨画」才走硅基流动。  
+LUT 格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere。进度见 [`任务文档.md`](./任务文档.md)。
 
-编排用 LangGraph，方便写进简历；修图思路参考 PhotoAgent 的感知→规划→执行闭环。  
-**本仓库不是 PhotoAgent 官方实现**（官方代码尚未发布）。
+**本仓库不是 PhotoAgent 官方实现**。MCTS / GRPO 未做，开关默认关。
 
 ## 一天闭环能做什么
 
-- 三种 Look：`film_portra`、`cinematic_teal_orange`、`hk_night`（`.cube` LUT）
-- 自然语言路由；多轮「再暗一点 / 再暖一点 / 少颗粒」
-- FastAPI：`/v1/health` `/v1/chat` `/v1/jobs` `/v1/assets` `/v1/styles` `/v1/rag/query` `/v1/budget`
-- 10 个 Style Pack YAML + Chroma 检索；「水彩和水墨差在哪」走 RAG citation，不出图
-- `image.2d`：硅基流动（Kolors）；无 Key 失败关闭；超 `DAILY_BUDGET_CNY` / `PROJECT_BUDGET_CNY` 不发请求
-- Gradio：原图、结果、原图|结果
-- 费用：LUT 调色路径 **0 元**；2D 按次计费并记账
+- 8 种摄影 Look：胶片暖调、电影青橙、港风夜景、黑白、复古褪色、黄金时刻、冷调青灰、电影哑光
+- 多轮「再暗一点 / 再暖一点 / 少颗粒」；无风格口令时 `perceive` 按场景建议 Look
+- `critique`：SSIM + 尺寸，最多再执行 1 次
+- FastAPI：`/v1/health` `/v1/chat` `/v1/jobs` `/v1/styles` `/v1/rag/query` `/v1/budget`
+- 15 个 Style Pack（8 摄影 + 7 艺术）可检索；艺术风格要出图需 Key
+- Docker Compose：`api` + `ui`，数据目录 `STYLEFORGE_DATA_DIR`
 
 ## 明确不做（避免简历夸大）
 
-- 未复现 PhotoAgent 的完整 MCTS / UGC Reward（GRPO）
-- 未做 7 种艺术风格作品集出图（接 Key 后可单张试 `改成水墨画`，受日预算熔断）
-- 3D / 长视频返回能力保留为 reserved
+- 未复现 PhotoAgent 的 MCTS / UGC Reward（GRPO）
+- 未生成 7 种艺术风格作品集（无 Key 时 2D 失败关闭）
+- 3D / 长视频仅 501 占位
 
 ## 环境（Windows）
 
-Python **3.12**（本机已验证：`E:\python\python.exe`）。不要用 3.14 装这套依赖。
+Python **3.12**（`E:\python\python.exe`）。不要用 3.14。
 
 ```powershell
 cd F:\item
@@ -38,30 +36,21 @@ Copy-Item .env.example .env
 
 ## 启动
 
-终端 1 — API：
-
 ```powershell
 .\.venv\Scripts\Activate.ps1
 uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-浏览器打开 http://127.0.0.1:8000/docs
+另开终端：`python app_ui.py` → http://127.0.0.1:7860  
+OpenAPI：http://127.0.0.1:8000/docs
 
-终端 2 — 界面：
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python app_ui.py
-```
-
-打开 http://127.0.0.1:7860 ，上传照片，输入「做成胶片暖调」。无图可问「水彩和水墨差在哪」。
-
-首次风格检索会自动入库；也可手动：
+Docker（需已安装 Docker Desktop，先有 `.env`）：
 
 ```powershell
-curl.exe -s -X POST http://127.0.0.1:8000/v1/styles/ingest
-curl.exe -s -X POST http://127.0.0.1:8000/v1/rag/query -H "Content-Type: application/json" -d "{\"query\":\"夜景霓虹\",\"k\":3}"
+docker compose up --build
 ```
+
+API `8000`，Gradio `7860`。容器内 UI 监听 `0.0.0.0`。
 
 ## 测试
 
@@ -72,17 +61,24 @@ pytest -q
 ## LangGraph 节点（面试可画）
 
 ```
-START → route → (有图且是 Look) execute → END
-              ↘ (问答 / 无图) END
+START → route → perceive → execute → critique → (失败则再 execute 一次) END
+              ↘ 问答 / 无图 / 3D END
+              ↘ image.2d execute END
 ```
 
-`execute` 对摄影 Look 只调用 `PhotoLookRenderer`（OpenCV）；对 `image.2d` 只调用 `Image2DRenderer`（厂商 URL 仅出现在 `app/providers/`）。
+摄影路径只调 `PhotoLookRenderer`；2D 只调 `Image2DRenderer`（厂商 URL 仅 `app/providers/`）。
 
-## 简历建议写法
+## 简历建议写法（可直接改项目名/仓库链接）
 
-> 参考 PhotoAgent（Yao et al.）的修图 Agent 闭环，使用 LangGraph 实现 route→execute 编排，摄影 Look 以 OpenCV 传统调色为执行器（零推理成本）。
+中文：
 
-不要写「开发了 PhotoAgent」或「复现了论文全部实验」。
+> 独立完成修图 Agent StyleForge：用 LangGraph 编排 route→perceive→execute→critique；8 种摄影 Look 为自烘焙 Adobe `.cube` 3D LUT（OpenCV，零推理成本）；风格知识用 YAML Style Pack + Chroma RAG；2D 生图经硅基流动适配器，带日/项目预算熔断与失败关闭。参考 PhotoAgent 闭环，非论文官方复现。
+
+English:
+
+> Built StyleForge, a LangGraph photo-styling agent (route→perceive→execute→critique) with 8 self-baked .cube LUTs, Chroma style-pack RAG, and a budget-capped SiliconFlow image.2d adapter. Inspired by PhotoAgent; not an official reproduction.
+
+不要写「开发了 PhotoAgent」「已支持 10 种风格出图」「已复现 MCTS/GRPO」。
 
 ## Citation
 

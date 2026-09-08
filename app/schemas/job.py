@@ -10,6 +10,11 @@ LOOK_STYLE_IDS = (
     "film_portra",
     "cinematic_teal_orange",
     "hk_night",
+    "mono_bw",
+    "vintage_fade",
+    "golden_hour",
+    "cool_steel",
+    "matte_film",
 )
 
 
@@ -40,6 +45,9 @@ class JobTrace(BaseModel):
     source_asset_id: str | None = None
     comparison_asset_id: str | None = None
     lut: str | None = None
+    scene: str | None = None
+    critique: dict = Field(default_factory=dict)
+    retry_count: int = 0
 
 
 class JobOut(BaseModel):

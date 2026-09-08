@@ -55,10 +55,9 @@ def launch():
     with gr.Blocks(title="StyleForge LUT 闭环") as demo:
         gr.Markdown(
             "## StyleForge · LUT 摄影 Look\n"
-            "上传照片，说「胶片暖调 / 电影青橙 / 港风夜景」，再试「再暗一点」。"
-            "调色使用 **.cube 3D LUT**（格式对齐 [CubeLUT](https://cubelut.cn/index.php) / Premiere Lumetri），"
-            "LangGraph：`route → execute`。无图可问「水彩和水墨差在哪」。"
-            "说「改成水墨画」走 image.2d（需硅基流动 Key，超日预算会熔断）。Look 路径 0 元。"
+            "上传照片，说「胶片暖调 / 电影青橙 / 港风夜景 / 黑白 / 复古 / 黄金时刻 / 冷调 / 哑光」，再试「再暗一点」。"
+            "LangGraph：`route → perceive → execute → critique`。.cube LUT 对齐 [CubeLUT](https://cubelut.cn/index.php)。"
+            "无图可问「水彩和水墨差在哪」。说「改成水墨画」走 image.2d（需 Key）。Look 0 元。"
         )
         thread = gr.State(value=None)
         with gr.Row():
@@ -82,8 +81,8 @@ def launch():
         )
     print("starting gradio on http://127.0.0.1:7860", flush=True)
     demo.launch(
-        server_name="127.0.0.1",
-        server_port=7860,
+        server_name=os.environ.get("STYLEFORGE_UI_HOST", "127.0.0.1"),
+        server_port=int(os.environ.get("STYLEFORGE_UI_PORT", "7860")),
         share=False,
         inbrowser=False,
         prevent_thread_lock=False,

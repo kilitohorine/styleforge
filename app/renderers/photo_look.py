@@ -16,13 +16,13 @@ LUT_DIR = Path(__file__).resolve().parent.parent / "luts"
 LOOKS = {
     "film_portra": {
         "name": "胶片暖调",
-        "keywords": ("胶片", "暖调", "portra", "日系", "柯达", "fuji", "富士"),
+        "keywords": ("胶片", "胶片暖调", "暖调", "portra", "日系", "柯达", "fuji", "富士"),
         "lut": "film_portra.cube",
         "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.03, "lut_strength": 1.0},
     },
     "cinematic_teal_orange": {
         "name": "电影青橙",
-        "keywords": ("电影", "青橙", "cinematic", "teal", "阿莱", "质感"),
+        "keywords": ("电影青橙", "青橙", "cinematic", "teal", "阿莱", "质感"),
         "lut": "cinematic_teal_orange.cube",
         "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.02, "lut_strength": 1.0},
     },
@@ -31,6 +31,36 @@ LOOKS = {
         "keywords": ("港风", "夜景", "霓虹", "hk", "赛博夜", "暗青"),
         "lut": "hk_night.cube",
         "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.05, "lut_strength": 1.0},
+    },
+    "mono_bw": {
+        "name": "黑白胶片",
+        "keywords": ("黑白", "单色", "bw", "黑白胶片", "mono"),
+        "lut": "mono_bw.cube",
+        "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.04, "lut_strength": 1.0},
+    },
+    "vintage_fade": {
+        "name": "复古褪色",
+        "keywords": ("复古", "褪色", "过期胶片", "vintage", "fade"),
+        "lut": "vintage_fade.cube",
+        "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.045, "lut_strength": 1.0},
+    },
+    "golden_hour": {
+        "name": "黄金时刻",
+        "keywords": ("黄金时刻", "黄金", "日落", "夕阳", "golden"),
+        "lut": "golden_hour.cube",
+        "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.025, "lut_strength": 1.0},
+    },
+    "cool_steel": {
+        "name": "冷调青灰",
+        "keywords": ("冷调", "青灰", "steel", "阴天", "冷色"),
+        "lut": "cool_steel.cube",
+        "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.02, "lut_strength": 1.0},
+    },
+    "matte_film": {
+        "name": "电影哑光",
+        "keywords": ("哑光", "雾面", "matte", "电影哑光", "低对比"),
+        "lut": "matte_film.cube",
+        "params": {"exposure": 0.0, "warm": 0.0, "grain": 0.03, "lut_strength": 1.0},
     },
 }
 
@@ -77,10 +107,40 @@ def color_grade_rgb(rgb: np.ndarray, style_id: str) -> np.ndarray:
         orange = np.array([0.10, -0.01, -0.06], dtype=np.float32)
         stacked = stacked + shadow * teal + highlight * orange
         return _s_curve(np.clip(stacked, 0, 1), 0.18)
-    stacked = np.stack([r, g, b], axis=-1) * 0.88
-    stacked[..., 2] = np.clip(stacked[..., 2] * 1.08 + 0.03, 0, 1)
-    stacked[..., 0] = np.clip(stacked[..., 0] * 1.10 + 0.02, 0, 1)
-    return _s_curve(stacked, 0.22)
+    if style_id == "hk_night":
+        stacked = np.stack([r, g, b], axis=-1) * 0.88
+        stacked[..., 2] = np.clip(stacked[..., 2] * 1.08 + 0.03, 0, 1)
+        stacked[..., 0] = np.clip(stacked[..., 0] * 1.10 + 0.02, 0, 1)
+        return _s_curve(stacked, 0.22)
+    if style_id == "mono_bw":
+        grey = 0.299 * r + 0.587 * g + 0.114 * b
+        stacked = np.stack([grey * 1.05, grey, grey * 0.96], axis=-1)
+        return _s_curve(np.clip(stacked, 0, 1), 0.2)
+    if style_id == "vintage_fade":
+        stacked = np.stack([r, g, b], axis=-1)
+        stacked = stacked * 0.82 + 0.12
+        stacked[..., 0] = np.clip(stacked[..., 0] * 1.08, 0, 1)
+        stacked[..., 2] = np.clip(stacked[..., 2] * 0.88, 0, 1)
+        return _s_curve(stacked, -0.08)
+    if style_id == "golden_hour":
+        stacked = np.stack([r, g, b], axis=-1)
+        stacked[..., 0] = np.clip(stacked[..., 0] * 1.18 + 0.04, 0, 1)
+        stacked[..., 1] = np.clip(stacked[..., 1] * 1.08 + 0.02, 0, 1)
+        stacked[..., 2] = np.clip(stacked[..., 2] * 0.78, 0, 1)
+        return _s_curve(stacked, 0.1)
+    if style_id == "cool_steel":
+        stacked = np.stack([r, g, b], axis=-1)
+        stacked[..., 0] = np.clip(stacked[..., 0] * 0.88, 0, 1)
+        stacked[..., 1] = np.clip(stacked[..., 1] * 1.02, 0, 1)
+        stacked[..., 2] = np.clip(stacked[..., 2] * 1.14 + 0.03, 0, 1)
+        sat = stacked.mean(axis=-1, keepdims=True)
+        stacked = sat + (stacked - sat) * 0.75
+        return _s_curve(np.clip(stacked, 0, 1), 0.08)
+    # matte_film
+    stacked = np.stack([r, g, b], axis=-1)
+    stacked = np.clip(stacked * 0.9 + 0.08, 0, 1)
+    stacked = stacked * 0.92 + 0.04
+    return _s_curve(stacked, -0.12)
 
 
 def _grain(img: np.ndarray, amount: float) -> np.ndarray:
@@ -90,7 +150,7 @@ def _grain(img: np.ndarray, amount: float) -> np.ndarray:
     return np.clip(img + noise[:, :, None], 0, 1)
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=16)
 def _load_table(style_id: str) -> np.ndarray | None:
     name = LOOKS[style_id]["lut"]
     path = LUT_DIR / name

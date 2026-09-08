@@ -1,0 +1,19 @@
+style_id: vintage_fade
+name: 复古褪色
+domain: [image.photo_look]
+version: 1
+summary: |
+  抬黑、降对比、略红的过期胶片感。摄影 Look，.cube LUT。
+positive: |
+  vintage fade, expired film, lifted blacks, 复古褪色, muted contrast
+negative: |
+  HDR crunch, neon rain, ink wash, pixel art
+use_when: |
+  用户说复古、褪色、过期胶片、vintage。
+avoid: |
+  夜景霓虹优先港风，不要用本 Look 冒充赛博。
+photo_look:
+  lut: vintage_fade.cube
+  grain: 0.045
+  lut_strength: 1.0
+legal: original_descriptors_only

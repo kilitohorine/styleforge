@@ -1,0 +1,19 @@
+style_id: matte_film
+name: 电影哑光
+domain: [image.photo_look]
+version: 1
+summary: |
+  压高光、抬黑位、雾面低对比。摄影 Look，.cube LUT，不是生成式滤镜。
+positive: |
+  matte film, lifted blacks, rolled highlights, 电影哑光, low contrast
+negative: |
+  glossy HDR, neon punch, watercolor bloom, ink splatter
+use_when: |
+  用户说哑光、雾面、matte、电影哑光、低对比。
+avoid: |
+  需要高对比青橙时用 cinematic_teal_orange。
+photo_look:
+  lut: matte_film.cube
+  grain: 0.03
+  lut_strength: 1.0
+legal: original_descriptors_only

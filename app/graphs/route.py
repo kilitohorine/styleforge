@@ -38,6 +38,12 @@ class AgentState(TypedDict, total=False):
     citations: list[str]
     params: dict
     is_patch: bool
+    user_named_style: bool
+    scene: str
+    step: int
+    need_retry: bool
+    perceive: dict
+    critique: dict
 
 
 def parse_patch(message: str) -> dict | None:
@@ -118,12 +124,13 @@ def keyword_route(message: str, has_image: bool) -> tuple[str, str | None, str]:
         )
 
     if has_image:
-        return "look", "film_portra", "已上传照片，默认套用胶片暖调。可改口令：电影青橙 / 港风夜景；也可说「再暗一点」。"
+        return "look", "film_portra", "已上传照片，默认套用胶片暖调。可改口令：青橙 / 港风 / 黑白 / 复古 / 黄金时刻 / 冷调 / 哑光。"
 
     return (
         "qa",
         None,
-        "StyleForge：上传照片后说「胶片暖调 / 电影青橙 / 港风夜景」。调色走 .cube LUT（格式对齐 CubeLUT / Premiere），多轮可说「再暗一点」。",
+        "StyleForge：上传照片后说「胶片暖调 / 电影青橙 / 港风夜景 / 黑白 / 复古 / 黄金时刻 / 冷调 / 哑光」。"
+        "调色走 .cube LUT，多轮可说「再暗一点」。",
     )
 
 
@@ -147,9 +154,10 @@ def _llm_route(message: str, has_image: bool) -> tuple[str, str | None, str] | N
         )
         structured = llm.with_structured_output(Route)
         prompt = (
-            "你是修图 Agent 路由器。look 风格: film_portra, cinematic_teal_orange, hk_night。\n"
+            "你是修图 Agent 路由器。look 风格: film_portra, cinematic_teal_orange, hk_night, "
+            "mono_bw, vintage_fade, golden_hour, cool_steel, matte_film。\n"
             "image2d 风格: watercolor, pastoral_anime, cyberpunk, ink_wash, oil_paint, pixel, flat_illustration。\n"
-            "用户说「改成水墨/生成水彩」才用 image2d；问区别用 qa。有图且说胶片/调色用 look。3D/视频为 unsupported。\n"
+            "用户说「改成水墨/生成水彩」才用 image2d；问区别用 qa。有图且说胶片/调色/黑白/复古用 look。3D/视频为 unsupported。\n"
             f"有图={has_image}\n用户: {message}"
         )
         out = structured.invoke(prompt)
@@ -189,6 +197,7 @@ def route_node(state: AgentState) -> AgentState:
             "style_id": prev_style,
             "params": params,
             "is_patch": True,
+            "user_named_style": True,
             "reply": f"保持 {name}（{prev_style}），只改参数 {delta}。",
             "citations": [f"style:{prev_style}", "lut:cube"],
         }
@@ -210,6 +219,7 @@ def route_node(state: AgentState) -> AgentState:
         "style_id": style_id,
         "params": params,
         "is_patch": False,
+        "user_named_style": bool(style_hit and intent == "look"),
         "reply": reply,
         "citations": citations,
     }
@@ -217,7 +227,7 @@ def route_node(state: AgentState) -> AgentState:
 
 def after_route(state: AgentState) -> str:
     if state.get("intent") == "look" and state.get("asset_id") and state.get("style_id"):
-        return "execute"
+        return "perceive"
     if state.get("intent") == "image2d" and state.get("style_id"):
         return "execute"
     return "end"

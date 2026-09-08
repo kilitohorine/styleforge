@@ -1,0 +1,19 @@
+style_id: golden_hour
+name: 黄金时刻
+domain: [image.photo_look]
+version: 1
+summary: |
+  日落方向的金橙高光与暖阴影。摄影 Look，.cube LUT。
+positive: |
+  golden hour, sunset warmth, 黄金时刻, amber highlight, warm rim
+negative: |
+  cool steel, cyan shadows, ink wash, neon magenta
+use_when: |
+  用户说黄金时刻、黄金、日落、夕阳、golden。风光与逆光人像优先。
+avoid: |
+  纯夜景招牌光请用 hk_night。
+photo_look:
+  lut: golden_hour.cube
+  grain: 0.025
+  lut_strength: 1.0
+legal: original_descriptors_only

@@ -1,0 +1,19 @@
+style_id: mono_bw
+name: 黑白胶片
+domain: [image.photo_look]
+version: 1
+summary: |
+  单通道黑白、轻微暖高光。摄影 Look，.cube LUT，不重绘五官。
+positive: |
+  black and white film, 黑白胶片, silver halide, gentle contrast, mono
+negative: |
+  neon cyberpunk, watercolor, heavy teal-orange, candy saturation
+use_when: |
+  用户说黑白、单色、bw、黑白胶片。人像与纪实优先。
+avoid: |
+  不要当成水墨；不要走 image.2d。
+photo_look:
+  lut: mono_bw.cube
+  grain: 0.04
+  lut_strength: 1.0
+legal: original_descriptors_only

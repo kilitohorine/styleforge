@@ -1,0 +1,30 @@
+services:
+  api:
+    build: .
+    image: styleforge-api:phase1
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      STYLEFORGE_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  ui:
+    image: styleforge-api:phase1
+    depends_on:
+      - api
+    command: python app_ui.py
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    environment:
+      STYLEFORGE_DATA_DIR: /app/data
+      STYLEFORGE_UI_HOST: 0.0.0.0
+      STYLEFORGE_UI_PORT: "7860"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

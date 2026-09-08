@@ -41,7 +41,7 @@ def _image_2d_ready() -> bool:
 
 @app.get("/v1/health")
 def health():
-    return {"status": "ok", "loop": "langgraph:route->execute"}
+    return {"status": "ok", "loop": "langgraph:route->perceive->execute->critique"}
 
 
 @app.get("/v1/capabilities")

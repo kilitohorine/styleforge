@@ -10,7 +10,7 @@ from app.renderers.photo_look import apply_look
 def test_looks_change_pixels():
     img = np.zeros((64, 64, 3), dtype=np.uint8)
     img[:, :] = (40, 80, 160)
-    for sid in ("film_portra", "cinematic_teal_orange", "hk_night"):
+    for sid in ("film_portra", "cinematic_teal_orange", "hk_night", "mono_bw", "golden_hour"):
         out = apply_look(img, sid)
         assert out.shape == img.shape
         assert not np.array_equal(out, img)

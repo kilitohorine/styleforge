@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     siliconflow_base_url: str = "https://api.siliconflow.cn/v1"
     siliconflow_image_model: str = "Kwai-Kolors/Kolors"
     image_2d_backend: str = "siliconflow"
+    enable_critique: bool = True
+    max_critique_step: int = 2
+    enable_mcts: bool = False
 
     @property
     def data_dir(self) -> Path:
